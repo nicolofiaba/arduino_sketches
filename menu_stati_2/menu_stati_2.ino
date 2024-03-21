@@ -1,3 +1,5 @@
+// Sketch per funzionamento stagionatore
+
 #include <Wire.h> /* I2C Library */
 #include <BME280I2C.h> /* Temperature/Humidity sensor: Connect to SDA/SCL */
 #include <U8g2lib.h> /* Oled display 128x64: Connect to SDA/SCL */
