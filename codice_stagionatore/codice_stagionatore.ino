@@ -1,5 +1,4 @@
 // Sketch per funzionamento stagionatore
-
 #include <Wire.h> /* I2C Library */
 #include <BME280I2C.h> /* Temperature/Humidity sensor: Connect to SDA/SCL */
 #include <U8g2lib.h> /* Oled display 128x64: Connect to SDA/SCL */
@@ -33,12 +32,17 @@ byte screen_state = 10;
 // Set temperature and humidity: default values and deltas (They can be modified by the user, later on)
 
 byte temp_set;
-byte delta_t_set;
+byte delta_heat_ON;
+byte delta_heat_OFF;
+byte delta_cool_ON;
+byte delta_cool_OFF;
 byte hum_set;
-byte delta_h_set;
+byte delta_hum_ON;
+byte delta_hum_OFF;
+byte delta_deu_ON;
+byte delta_deu_OFF;
 
 BME280I2C bme;
-//U8G2_SSD1306_128X64_NONAME_F_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 //ThreeWire myWire(DAT, CLK, RST); // DAT, CLK, RST pins
 //RtcDS1302<ThreeWire> Rtc(myWire);
@@ -48,8 +52,15 @@ struct arguments {
   float h_current;
   byte t_set;
   byte h_set;
-  byte dt;
-  byte dh;
+  byte dt_heat_on;
+  byte dt_heat_off;
+  byte dt_cool_on;
+  byte dt_cool_off;
+  byte dh_hum_on;
+  byte dh_hum_off;
+  byte dh_deu_on;
+  byte dh_deu_off;
+
 };
 
 void setup() {
@@ -85,9 +96,15 @@ void setup() {
   //Rtc.SetDateTime(currentTime);
 
   EEPROM.get(0, temp_set);
-  EEPROM.get(2, delta_t_set);
-  EEPROM.get(4, hum_set);
-  EEPROM.get(6, delta_h_set);
+  EEPROM.get(2, delta_heat_ON);
+  EEPROM.get(4, delta_heat_OFF);
+  EEPROM.get(6, delta_cool_ON);
+  EEPROM.get(8, delta_cool_OFF);
+  EEPROM.get(10, hum_set);
+  EEPROM.get(12, delta_hum_ON);
+  EEPROM.get(14, delta_hum_OFF);
+  EEPROM.get(16, delta_deu_ON);
+  EEPROM.get(18, delta_deu_OFF);
 
   delay(500);
 }
@@ -105,7 +122,7 @@ void loop() {
   //RtcDateTime now = Rtc.GetDateTime();
   //ventilation(now, 10, 20, 30); // From 10.20 to 10.30 the fan is turned ON for ventilation
 
-  arguments func_args = {t, h, temp_set, hum_set, delta_t_set, delta_h_set};
+  arguments func_args = {t, h, temp_set, hum_set, delta_heat_ON, delta_heat_OFF, delta_cool_ON, delta_cool_OFF, delta_hum_ON, delta_hum_OFF, delta_deu_ON, delta_deu_OFF};
 
   bool button_state_1 = digitalRead(BUTTON_1); // Set T/H e SET
   bool button_state_2 = digitalRead(BUTTON_2); // -
@@ -190,7 +207,6 @@ int state_selection(bool button_state_1, bool button_state_2, bool button_state_
 }
 // OLED menu drawing functions:
 void default_page(arguments& args, byte screen_state) {
-  //oled.clearBuffer();
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_8x13_tr);
@@ -250,12 +266,9 @@ void default_page(arguments& args, byte screen_state) {
     drawStateBox(109, 11, cool_state, "T-");
     drawStateBox(89, 40, umi_state, "H+");
     drawStateBox(109, 40, deu_state, "H-");
-
-    //oled.sendBuffer();
   } while ( oled.nextPage() );
 }
 void info_page(arguments& args, byte screen_state) {
-  //oled.clearBuffer();
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_4x6_tr);
@@ -281,12 +294,9 @@ void info_page(arguments& args, byte screen_state) {
     oled.print(args.dh, 0);
 
     drawBar(screen_state);
-
-    //oled.sendBuffer();
   } while ( oled.nextPage() );
 }
 void set_parameter_page(arguments& args, byte screen_state) {
-  //oled.clearBuffer();
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_8x13_tr);
@@ -368,7 +378,6 @@ void set_parameter_page(arguments& args, byte screen_state) {
 
     drawBar(screen_state);
 
-    //oled.sendBuffer();
   } while ( oled.nextPage() );
 }
 void drawBar(byte screen_state) {
