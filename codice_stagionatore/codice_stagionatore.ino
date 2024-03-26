@@ -96,15 +96,15 @@ void setup() {
   //Rtc.SetDateTime(currentTime);
 
   EEPROM.get(0, temp_set);
-  EEPROM.get(2, delta_heat_ON);
-  EEPROM.get(4, delta_heat_OFF);
-  EEPROM.get(6, delta_cool_ON);
-  EEPROM.get(8, delta_cool_OFF);
-  EEPROM.get(10, hum_set);
-  EEPROM.get(12, delta_hum_ON);
-  EEPROM.get(14, delta_hum_OFF);
-  EEPROM.get(16, delta_deu_ON);
-  EEPROM.get(18, delta_deu_OFF);
+  EEPROM.get(1, delta_heat_ON);
+  EEPROM.get(2, delta_heat_OFF);
+  EEPROM.get(3, delta_cool_ON);
+  EEPROM.get(4, delta_cool_OFF);
+  EEPROM.get(5, hum_set);
+  EEPROM.get(6, delta_hum_ON);
+  EEPROM.get(7, delta_hum_OFF);
+  EEPROM.get(8, delta_deu_ON);
+  EEPROM.get(9, delta_deu_OFF);
 
   delay(500);
 }
@@ -144,38 +144,98 @@ void loop() {
         EEPROM.put(0, temp_set);
       }
       break;
-    case 30:
-      info_page(func_args, screen_state);
-      break;
     case 21:
       set_parameter_page(func_args, screen_state);
       if (button_state_2 == HIGH) {
-        delta_t_set -= 1;
-        EEPROM.put(2, delta_t_set);
+        delta_heat_ON -= 1;
+        EEPROM.put(1, delta_heat_ON);
       } else if (button_state_3 == HIGH) {
-        delta_t_set += 1;
-        EEPROM.put(2, delta_t_set);
+        delta_heat_ON += 1;
+        EEPROM.put(1, delta_heat_ON);
       }
       break;
     case 22:
       set_parameter_page(func_args, screen_state);
       if (button_state_2 == HIGH) {
-        hum_set -= 1;
-        EEPROM.put(4, hum_set);
+        delta_heat_OFF -= 1;
+        EEPROM.put(2, delta_heat_OFF);
       } else if (button_state_3 == HIGH) {
-        hum_set += 1;
-        EEPROM.put(4, hum_set);
+        delta_heat_OFF += 1;
+        EEPROM.put(2, delta_heat_OFF);
       }
       break;
     case 23:
       set_parameter_page(func_args, screen_state);
       if (button_state_2 == HIGH) {
-        delta_h_set -= 1;
-        EEPROM.put(6, delta_h_set);
+        delta_cool_ON -= 1;
+        EEPROM.put(3, delta_cool_ON);
       } else if (button_state_3 == HIGH) {
-        delta_h_set += 1;
-        EEPROM.put(6, delta_h_set);
+        delta_cool_ON += 1;
+        EEPROM.put(3, delta_cool_ON);
       }
+      break;
+    case 24:
+      set_parameter_page(func_args, screen_state);
+      if (button_state_2 == HIGH) {
+        delta_cool_OFF -= 1;
+        EEPROM.put(4, delta_cool_OFF);
+      } else if (button_state_3 == HIGH) {
+        delta_cool_OFF += 1;
+        EEPROM.put(4, delta_cool_OFF);
+      }
+      break;
+    case 25:
+      set_parameter_page(func_args, screen_state);
+      if (button_state_2 == HIGH) {
+        hum_set -= 1;
+        EEPROM.put(5, hum_set);
+      } else if (button_state_3 == HIGH) {
+        hum_set += 1;
+        EEPROM.put(5, hum_set);
+      }
+      break;
+    case 26:
+      set_parameter_page(func_args, screen_state);
+      if (button_state_2 == HIGH) {
+        delta_hum_ON -= 1;
+        EEPROM.put(6, delta_hum_ON);
+      } else if (button_state_3 == HIGH) {
+        delta_hum_ON += 1;
+        EEPROM.put(6, delta_hum_ON);
+      }
+      break;
+    case 27:
+      set_parameter_page(func_args, screen_state);
+      if (button_state_2 == HIGH) {
+        delta_hum_OFF -= 1;
+        EEPROM.put(7, delta_hum_OFF);
+      } else if (button_state_3 == HIGH) {
+        delta_hum_OFF += 1;
+        EEPROM.put(7, delta_hum_OFF);
+      }
+      break;
+    case 28:
+      set_parameter_page(func_args, screen_state);
+      if (button_state_2 == HIGH) {
+        delta_deu_ON -= 1;
+        EEPROM.put(8, delta_deu_ON);
+      } else if (button_state_3 == HIGH) {
+        delta_deu_ON += 1;
+        EEPROM.put(8, delta_deu_ON);
+      }
+      break;
+    case 29:
+      set_parameter_page(func_args, screen_state);
+      if (button_state_2 == HIGH) {
+        delta_deu_OFF -= 1;
+        EEPROM.put(9, delta_deu_OFF);
+      } else if (button_state_3 == HIGH) {
+        delta_deu_OFF += 1;
+        EEPROM.put(9, delta_deu_OFF);
+      }
+      break;
+    case 30:
+      info_page(func_args, screen_state);
       break;
   }
   // Call for the functions that are keeping T and H constant.
@@ -199,14 +259,27 @@ int state_selection(bool button_state_1, bool button_state_2, bool button_state_
   } else if (button_state_4 == HIGH && screen_state == 22) {
     screen_state = 23;
   } else if (button_state_4 == HIGH && screen_state == 23) {
+    screen_state = 24;
+  } else if (button_state_4 == HIGH && screen_state == 24) {
+    screen_state = 25;
+  } else if (button_state_4 == HIGH && screen_state == 25) {
+    screen_state = 26;
+  } else if (button_state_4 == HIGH && screen_state == 26) {
+    screen_state = 27;
+  } else if (button_state_4 == HIGH && screen_state == 27) {
+    screen_state = 28;
+  } else if (button_state_4 == HIGH && screen_state == 28) {
+    screen_state = 29;
+  } else if (button_state_4 == HIGH && screen_state == 29) {
     screen_state = 10;
-  } else if (button_state_1 == HIGH  && (screen_state == 20 || screen_state == 21 || screen_state == 22 || screen_state == 23 || screen_state == 30)) {
+  } else if (button_state_1 == HIGH  && (screen_state == 20 || screen_state == 21 || screen_state == 22 || screen_state == 23 || screen_state == 24 || screen_state == 25 || screen_state == 26 || screen_state == 27 || screen_state == 28 || screen_state == 29 || screen_state == 30)) {
     screen_state = 10;
   }
   return screen_state;
 }
 // OLED menu drawing functions:
 void default_page(arguments& args, byte screen_state) {
+  //oled.clearBuffer();
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_8x13_tr);
@@ -231,6 +304,7 @@ void default_page(arguments& args, byte screen_state) {
     oled.setCursor(7, 43);
     oled.print(F("T"));
     oled.setFont(u8g2_font_4x6_tr);
+    oled.print(F("set"));
 
     oled.drawStr(50, 41, "+"); // +/- symbol for T_set
     oled.drawStr(50, 45, "-");
@@ -239,24 +313,31 @@ void default_page(arguments& args, byte screen_state) {
     oled.drawStr(50, 52, "+"); // +/- symbol for H_set
     oled.drawStr(50, 56, "-");
 
-    oled.print(F("set"));
-    
     oled.setFont(u8g2_font_6x10_tr);
+    oled.drawStr(68, 43, "C");
+    oled.drawStr(67, 54, "%");
+
     oled.print( F(": ") );
     oled.print(args.t_set);
-    oled.setCursor(55, 43);
-    oled.print(args.dt);
-    oled.print(F(" C") );
+    
     oled.setCursor(7, 54);
     oled.print( F("H") );
     oled.setFont(u8g2_font_4x6_tr);
     oled.print( F("set") );
     oled.setFont(u8g2_font_6x10_tr);
-    oled.print( ": ");
+    oled.print( F(": "));
     oled.print(args.h_set);
-    oled.setCursor(55, 54);
-    oled.print(args.dh);
-    oled.print(F("%"));
+
+    oled.setFont(u8g2_font_4x6_tr);
+    oled.setCursor(56, 51);
+    oled.print(args.dh_deu_on);
+    oled.setCursor(56, 56);
+    oled.print(args.dh_hum_on);
+    oled.setCursor(56, 39);
+    oled.print(args.dt_cool_on);
+    oled.setCursor(56, 45);
+    oled.print(args.dt_heat_on);
+
     // Screen selection white bar + vertical line
     oled.drawLine(83, 0, 83, 70);
 
@@ -266,6 +347,8 @@ void default_page(arguments& args, byte screen_state) {
     drawStateBox(109, 11, cool_state, "T-");
     drawStateBox(89, 40, umi_state, "H+");
     drawStateBox(109, 40, deu_state, "H-");
+
+    //oled.sendBuffer();
   } while ( oled.nextPage() );
 }
 void info_page(arguments& args, byte screen_state) {
@@ -281,101 +364,49 @@ void info_page(arguments& args, byte screen_state) {
     oled.setCursor(1, 35);
     oled.print( F("Temperatura:") );
     oled.print(args.t_set);
-    oled.setCursor(80, 35);
-    oled.print( F("Delta:") );
-    oled.setCursor(110, 35);
-    oled.print(args.dt);
     oled.setCursor(1, 44);
     oled.print(F("Umidita':") );
     oled.print(args.h_set);
-    oled.setCursor(80, 44);
-    oled.print( F("Delta:") );
-    oled.setCursor(110, 44);
-    oled.print(args.dh);
 
     drawBar(screen_state);
-  } while ( oled.nextPage() );
+  } while (oled.nextPage());
 }
 void set_parameter_page(arguments& args, byte screen_state) {
   oled.firstPage();
   do {
-    oled.setFont(u8g2_font_8x13_tr);
     switch (screen_state) {
-      case 20:
-        oled.drawBox(8, 9, 45, 13);
-        oled.setColorIndex(0);
-        oled.drawStr(10, 20, "T:");
-        oled.setCursor(31, 20);
-        oled.print(args.t_set);
-        oled.setColorIndex(1);
-
-        oled.drawStr(10, 40, "dT:");
-        oled.drawStr(70, 20, "H:");
-        oled.drawStr(70, 40, "dH:");
-        oled.setCursor(35, 40);
-        oled.print(args.dt);
-        oled.setCursor(91, 20);
-        oled.print(args.h_set);
-        oled.setCursor(95, 40);
-        oled.print(args.dh);
+      case 20: // TEMP
+        oled.drawFrame(8, 0, 50, 11); 
         break;
-      case 21:
-        oled.drawBox(8, 29, 45, 13);
-        oled.setColorIndex(0);
-        oled.drawStr(10, 40, "dT:");
-        oled.setCursor(35, 40);
-        oled.print(args.dt);
-        oled.setColorIndex(1);
-
-        oled.drawStr(10, 20, "T:");
-        oled.drawStr(70, 20, "H:");
-        oled.drawStr(70, 40, "dH:");
-        oled.setCursor(31, 20);
-        oled.print(args.t_set);
-        oled.setCursor(91, 20);
-        oled.print(args.h_set);
-        oled.setCursor(95, 40);
-        oled.print(args.dh);
+      case 21: // HEAT ON
+        oled.drawFrame(8, 11, 50, 11);
         break;
-      case 22:
-        oled.drawBox(68, 9, 45, 13);
-        oled.setColorIndex(0);
-        oled.drawStr(70, 20, "H:");
-        oled.setCursor(91, 20);
-        oled.print(args.h_set);
-        oled.setColorIndex(1);
-
-        oled.drawStr(10, 40, "dT:");
-        oled.drawStr(10, 20, "T:");
-        oled.drawStr(70, 40, "dH:");
-        oled.setCursor(35, 40);
-        oled.print(args.dt);
-        oled.setCursor(31, 20);
-        oled.print(args.t_set);
-        oled.setCursor(95, 40);
-        oled.print(args.dh);
+      case 22: // HEAT OFF
+        oled.drawFrame(8, 22, 50, 11);
         break;
-      case 23:
-        oled.drawBox(68, 29, 45, 13);
-        oled.setColorIndex(0);
-        oled.drawStr(70, 40, "dH:");
-        oled.setCursor(95, 40);
-        oled.print(args.dh);
-        oled.setColorIndex(1);
-
-        oled.drawStr(10, 40, "dT:");
-        oled.drawStr(70, 20, "H:");
-        oled.drawStr(10, 20, "T:");
-        oled.setCursor(35, 40);
-        oled.print(args.dt);
-        oled.setCursor(91, 20);
-        oled.print(args.h_set);
-        oled.setCursor(31, 20);
-        oled.print(args.t_set);
+      case 23: // COOL ON
+        oled.drawFrame(8, 33, 50, 11);
+        break;
+      case 24: // COOL OFF
+        oled.drawFrame(8, 44, 50, 11);
+        break;
+      case 25: // HUM
+        oled.drawFrame(68, 0, 50, 11);
+        break;
+      case 26: // UMI ON
+        oled.drawFrame(68, 11, 50, 11);
+        break;
+      case 27: // UMI OFF
+        oled.drawFrame(68, 22, 50, 11);
+        break;
+      case 28: // DEU ON
+        oled.drawFrame(68, 33, 50, 11);
+        break;
+      case 29: // DEU OFF
+        oled.drawFrame(68, 44, 50, 11);
         break;
     }
-    //Draw a box around the quantity you are changing: TEMPERATURE
-
+    writeParPage(args);
     drawBar(screen_state);
 
   } while ( oled.nextPage() );
@@ -393,7 +424,13 @@ void drawBar(byte screen_state) {
       break;
     case 20:
     case 21:
-    case 22: {
+    case 22:
+    case 23:
+    case 24:
+    case 25:
+    case 26: 
+    case 27:
+    case 28: {
         oled.print(F("Home") );
         oled.setCursor(46, 63);
         oled.print( F("-") );
@@ -403,7 +440,7 @@ void drawBar(byte screen_state) {
         oled.print( F("Next") );
         break;
       }
-    case 23:
+    case 29:
       oled.print(F("Home") );
       oled.setCursor(46, 63);
       oled.print( F("-") );
@@ -436,6 +473,49 @@ void drawStateBox(int x, int y, bool device_state, char* symbol ) {
   // Write T+ T- H+ H- on top of humi/deum cooler/heater state boxes
   oled.setFont(u8g2_font_6x10_tr);
   oled.drawStr(x + 3, y - 3, symbol);
+}
+void writeParPage(arguments& args){
+  oled.setFont(u8g2_font_4x6_tr);
+
+  oled.drawStr(10, 8, "TEMP:");
+  oled.setCursor(48, 8);
+  oled.print(args.t_set);
+
+  oled.drawStr(10, 19, "HEAT ON:");
+  oled.setCursor(48, 19);
+  oled.print(args.dt_heat_on);
+
+  oled.drawStr(10, 30, "HEAT OFF:");
+  oled.setCursor(48, 30);
+  oled.print(args.dt_heat_off);
+
+  oled.drawStr(10, 41, "COOL ON:");
+  oled.setCursor(48, 41);
+  oled.print(args.dt_cool_on);
+
+  oled.drawStr(10, 52, "COOL OFF:");
+  oled.setCursor(48, 52);
+  oled.print(args.dt_cool_off);
+
+  oled.drawStr(70, 8, "HUM:");
+  oled.setCursor(105, 8);
+  oled.print(args.h_set);
+
+  oled.drawStr(70, 19, "UMI ON:");
+  oled.setCursor(105, 19);
+  oled.print(args.dh_hum_on);
+
+  oled.drawStr(70, 30, "UMI OFF:");
+  oled.setCursor(105, 30);
+  oled.print(args.dh_hum_off);
+
+  oled.drawStr(70, 41, "DEU ON:");
+  oled.setCursor(105, 41);
+  oled.print(args.dh_deu_on);
+
+  oled.drawStr(70, 52, "DEU OFF:");
+  oled.setCursor(105, 52);
+  oled.print(args.dh_deu_off);
 }
 // TEMPERATURE control with REFRIGERATOR and LIGHT BULB
 void keep_T_const(arguments& args) {
