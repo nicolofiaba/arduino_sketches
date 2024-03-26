@@ -179,8 +179,8 @@ void loop() {
       break;
   }
   // Call for the functions that are keeping T and H constant.
-  keep_T_const(t, temp_set, delta_t_set);
-  keep_H_const(h, hum_set, delta_h_set);
+  keep_T_const(func_args);
+  keep_H_const(func_args);
 
   delay(300);
 }
@@ -280,18 +280,18 @@ void info_page(arguments& args, byte screen_state) {
     oled.print( F("Inizio: 24/4/24") );
     oled.setCursor(1, 35);
     oled.print( F("Temperatura:") );
-    oled.print(args.t_set, 0);
+    oled.print(args.t_set);
     oled.setCursor(80, 35);
     oled.print( F("Delta:") );
     oled.setCursor(110, 35);
-    oled.print(args.dt, 0);
+    oled.print(args.dt);
     oled.setCursor(1, 44);
     oled.print(F("Umidita':") );
-    oled.print(args.h_set, 0);
+    oled.print(args.h_set);
     oled.setCursor(80, 44);
     oled.print( F("Delta:") );
     oled.setCursor(110, 44);
-    oled.print(args.dh, 0);
+    oled.print(args.dh);
 
     drawBar(screen_state);
   } while ( oled.nextPage() );
@@ -438,17 +438,17 @@ void drawStateBox(int x, int y, bool device_state, char* symbol ) {
   oled.drawStr(x + 3, y - 3, symbol);
 }
 // TEMPERATURE control with REFRIGERATOR and LIGHT BULB
-void keep_T_const(float t_current, byte temp, byte dt) {
-  if ( t_current > temp + dt && cool_state == 0) {
+void keep_T_const(arguments& args) {
+  if ( args.t_current >= args.t_set + args.dt_cool_on && cool_state == 0) {
     cool_control(ON);
     cool_state = 1;
-  } else if ( t_current < temp && cool_state == 1) {
+  } else if ( args.t_current <= args.t_set + args.dt_cool_off && cool_state == 1) {
     cool_control(OFF);
     cool_state = 0;
-  } else if ( t_current < temp - dt && heat_state == 0) {
+  } else if ( args.t_current <= args.t_set - args.dt_heat_on && heat_state == 0) {
     heat_control(ON);
     heat_state = 1;
-  } else if ( t_current > temp && heat_state == 1) {
+  } else if ( args.t_current >= args.t_set - args.dt_heat_off && heat_state == 1) {
     heat_control(OFF);
     heat_state = 0;
   } else {
@@ -456,17 +456,17 @@ void keep_T_const(float t_current, byte temp, byte dt) {
   }
 }
 // HUMIDITY control with HUMIDIFIER and DEHUMIDIFIER
-void keep_H_const(float h_current, byte hum, byte dh) {
-  if ( h_current > hum + dh && deu_state == 0) {
+void keep_H_const(arguments& args) {
+  if ( args.h_current >= args.h_set + args.dh_deu_on && deu_state == 0) {
     deu_control(ON);
     deu_state = 1;
-  } else if ( h_current < hum && deu_state == 1) {
+  } else if ( args.h_current <= args.h_set + args.dh_deu_off && deu_state == 1) {
     deu_control(OFF);
     deu_state = 0;
-  } else if ( h_current < hum - dh && umi_state == 0) {
+  } else if ( args.h_current <= args.h_set - args.dh_hum_on && umi_state == 0) {
     umi_control(ON);
     umi_state = 1;
-  } else if ( h_current > hum && umi_state == 1) {
+  } else if ( args.h_current >= args.h_set - args.dh_hum_off && umi_state == 1) {
     umi_control(OFF);
     umi_state = 0;
   } else {
