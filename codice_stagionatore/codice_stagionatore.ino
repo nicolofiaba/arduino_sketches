@@ -8,19 +8,19 @@
 
 #define ON true
 #define OFF false
-#define RELAY_BUTTON_UMI 2
+#define RELAY_BUTTON_UMI 3
 #define RELAY_AC_DEU 12
 #define RELAY_AC_COOL 11
 #define RELAY_AC_HEAT 10
 #define RELAY_AC_UMI 9
 #define RELAY_FAN_EXT 8
-#define BUTTON_1 3
-#define BUTTON_2 4
-#define BUTTON_3 5
-#define BUTTON_4 6
-//#define DAT 4
-//#define CLK 5
-//#define RST 2
+#define BUTTON_1 4
+#define BUTTON_2 5
+#define BUTTON_3 6
+#define BUTTON_4 7
+#define DAT 0
+#define CLK 1
+#define RST 2
 
 float p, t, h;
 // Define 4 state variables for the devices: 0 = "OFF", 1 = "ON"
@@ -28,6 +28,7 @@ bool umi_state  = 0;
 bool deu_state  = 0;
 bool cool_state  = 0;
 bool heat_state  = 0;
+bool fan_state = 0;
 byte screen_state = 10;
 // Set temperature and humidity: default values and deltas (They can be modified by the user, later on)
 
@@ -42,10 +43,18 @@ byte delta_hum_OFF;
 byte delta_deu_ON;
 byte delta_deu_OFF;
 
+byte fan_start_hour_1;
+byte fan_start_min_1;
+byte fan_interval_min_1;
+
+byte fan_start_hour_2;
+byte fan_start_min_2;
+byte fan_interval_min_2;
+
 BME280I2C bme;
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
-//ThreeWire myWire(DAT, CLK, RST); // DAT, CLK, RST pins
-//RtcDS1302<ThreeWire> Rtc(myWire);
+ThreeWire myWire(DAT, CLK, RST); // DAT, CLK, RST pins
+RtcDS1302<ThreeWire> Rtc(myWire);
 
 struct arguments {
   float t_current;
@@ -60,7 +69,15 @@ struct arguments {
   byte dh_hum_off;
   byte dh_deu_on;
   byte dh_deu_off;
+};
 
+struct fan_arguments {
+  byte start_1_hr;
+  byte start_1_min;
+  byte interval_1_min;
+  byte start_2_hr;
+  byte start_2_min;
+  byte interval_2_min;
 };
 
 void setup() {
@@ -91,9 +108,9 @@ void setup() {
   bme.writeOversamplingTemperature(BMx280I2C::OSRS_T_x16);
   bme.writeOversamplingHumidity(BMx280I2C::OSRS_H_x16);
   */
-  //Rtc.Begin();
-  //RtcDateTime currentTime = RtcDateTime(__DATE__, __TIME__);
-  //Rtc.SetDateTime(currentTime);
+  Rtc.Begin();
+  RtcDateTime currentTime = RtcDateTime(__DATE__, __TIME__);
+  Rtc.SetDateTime(currentTime);
 
   EEPROM.get(0, temp_set);
   EEPROM.get(1, delta_heat_ON);
@@ -106,26 +123,26 @@ void setup() {
   EEPROM.get(8, delta_deu_ON);
   EEPROM.get(9, delta_deu_OFF);
 
+  EEPROM.get(10, fan_start_hour_1);
+  EEPROM.get(11, fan_start_min_1);
+  EEPROM.get(12, fan_interval_min_1);
+  EEPROM.get(13, fan_start_hour_2);
+  EEPROM.get(14, fan_start_min_2);
+  EEPROM.get(15, fan_interval_min_2);
+
   delay(500);
 }
 void loop() {
-  //Read temperature and humidity with BME280 sensor and write them in t, h global variables
-  /*
-  bme.measure();
-  do {
-    delay(100);
-  }while (bme.hasValue());
-  t = bme.getTemperature();
-  h = bme.getHumidity();
-  */
   bme.read(p, t, h);
-  //RtcDateTime now = Rtc.GetDateTime();
-  //ventilation(now, 10, 20, 30); // From 10.20 to 10.30 the fan is turned ON for ventilation
+  RtcDateTime now = Rtc.GetDateTime();
+
+  fan_arguments fan_args = {fan_start_hour_1, fan_start_min_1, fan_interval_min_1, fan_start_hour_2, fan_start_min_2, fan_interval_min_2};
+  ventilation(now, fan_args);
 
   arguments func_args = {t, h, temp_set, hum_set, delta_heat_ON, delta_heat_OFF, delta_cool_ON, delta_cool_OFF, delta_hum_ON, delta_hum_OFF, delta_deu_ON, delta_deu_OFF};
 
   bool button_state_1 = digitalRead(BUTTON_1); // Set T/H e SET
-  bool button_state_2 = digitalRead(BUTTON_2); // -
+  bool button_state_2 = digitalRead(BUTTON_2); // - e Fan
   bool button_state_3 = digitalRead(BUTTON_3); // +
   bool button_state_4 = digitalRead(BUTTON_4); // Info e Home
   screen_state = state_selection(button_state_1, button_state_2, button_state_3, button_state_4, screen_state); // I use the function <state_selection> to select the value of screen_state
@@ -235,7 +252,67 @@ void loop() {
       }
       break;
     case 30:
-      info_page(func_args, screen_state);
+      info_page(func_args, screen_state, now);
+      break;
+    case 31:
+      set_fan_page(fan_args, screen_state);
+      if (button_state_2 == HIGH) {
+        fan_start_hour_1 -= 1;
+        EEPROM.put(10, fan_start_hour_1);
+      } else if (button_state_3 == HIGH) {
+        fan_start_hour_1 += 1;
+        EEPROM.put(10, fan_start_hour_1);
+      }
+      break;
+    case 32:
+      set_fan_page(fan_args, screen_state);
+      if (button_state_2 == HIGH) {
+        fan_start_min_1 -= 1;
+        EEPROM.put(11, fan_start_min_1);
+      } else if (button_state_3 == HIGH) {
+        fan_start_min_1 += 1;
+        EEPROM.put(11, fan_start_min_1);
+      }
+      break;
+    case 33:
+      set_fan_page(fan_args, screen_state);
+      if (button_state_2 == HIGH) {
+        fan_interval_min_1 -= 1;
+        EEPROM.put(12, fan_interval_min_1);
+      } else if (button_state_3 == HIGH) {
+        fan_interval_min_1 += 1;
+        EEPROM.put(12, fan_interval_min_1);
+      }
+      break;
+    case 34:
+      set_fan_page(fan_args, screen_state);
+      if (button_state_2 == HIGH) {
+        fan_start_hour_2 -= 1;
+        EEPROM.put(13, fan_start_hour_2);
+      } else if (button_state_3 == HIGH) {
+        fan_start_hour_2 += 1;
+        EEPROM.put(13, fan_start_hour_2);
+      }
+      break;
+    case 35:
+      set_fan_page(fan_args, screen_state);
+      if (button_state_2 == HIGH) {
+        fan_start_min_2 -= 1;
+        EEPROM.put(14, fan_start_min_2);
+      } else if (button_state_3 == HIGH) {
+        fan_start_min_2 += 1;
+        EEPROM.put(14, fan_start_min_2);
+      }
+      break;
+    case 36:
+      set_fan_page(fan_args, screen_state);
+      if (button_state_2 == HIGH) {
+        fan_interval_min_2 -= 1;
+        EEPROM.put(15, fan_start_min_2);
+      } else if (button_state_3 == HIGH) {
+        fan_start_min_2 += 1;
+        EEPROM.put(15, fan_start_min_2);
+      }
       break;
   }
   // Call for the functions that are keeping T and H constant.
@@ -250,6 +327,21 @@ int state_selection(bool button_state_1, bool button_state_2, bool button_state_
 
   if (button_state_1 == HIGH && screen_state == 10) { // If you are on HOME and you press the first button, you go to T/H selection page.
     screen_state = 20;
+  } else if (button_state_2 == HIGH && screen_state == 10) { // Homepage to Fan (Set hour 1)
+    screen_state = 31;
+  } else if (button_state_4 == HIGH && screen_state == 31) { // Fan (Set min 1)
+    screen_state = 32;
+  } else if (button_state_4 == HIGH && screen_state == 32) { // Fan (Set interval 1)
+    screen_state = 33;
+  } else if (button_state_4 == HIGH && screen_state == 33) { // Fan (Set hour 2)
+    screen_state = 34;
+  } else if (button_state_4 == HIGH && screen_state == 34) { // Fan (Set min 2)
+    screen_state = 35;
+  } else if (button_state_4 == HIGH && screen_state == 35) { // Fan (Set interval 2)
+    screen_state = 36;
+  } else if (button_state_4 == HIGH && screen_state == 36) { // Return to home
+    screen_state = 10;
+
   } else if (button_state_4 == HIGH && screen_state == 10) { // Homepage to Info
     screen_state = 30;
   } else if (button_state_4 == HIGH && screen_state == 20) {
@@ -272,7 +364,11 @@ int state_selection(bool button_state_1, bool button_state_2, bool button_state_
     screen_state = 29;
   } else if (button_state_4 == HIGH && screen_state == 29) {
     screen_state = 10;
-  } else if (button_state_1 == HIGH  && (screen_state == 20 || screen_state == 21 || screen_state == 22 || screen_state == 23 || screen_state == 24 || screen_state == 25 || screen_state == 26 || screen_state == 27 || screen_state == 28 || screen_state == 29 || screen_state == 30)) {
+  } else if (button_state_1 == HIGH  && (screen_state == 20 || screen_state == 21 || screen_state == 22 || screen_state == 23 ||
+                                         screen_state == 24 || screen_state == 25 || screen_state == 26 || screen_state == 27 ||
+                                         screen_state == 28 || screen_state == 29 || screen_state == 30 || screen_state == 31 ||
+                                         screen_state == 32 || screen_state == 33 || screen_state == 34 || screen_state == 35 ||
+                                         screen_state == 36)) {
     screen_state = 10;
   }
   return screen_state;
@@ -351,14 +447,14 @@ void default_page(arguments& args, byte screen_state) {
     //oled.sendBuffer();
   } while ( oled.nextPage() );
 }
-void info_page(arguments& args, byte screen_state) {
+void info_page(arguments& args, byte screen_state, RtcDateTime now) {
   oled.firstPage();
   do {
     oled.setFont(u8g2_font_4x6_tr);
     oled.setCursor(1, 8);
     oled.print( F("Fase: Stagionatura") );
     oled.setCursor(1, 17);
-    oled.print( F("Prodotto: Salame") );
+    oled.print( F("Prodotto: Guanciale") );
     oled.setCursor(1, 26);
     oled.print( F("Inizio: 24/4/24") );
     oled.setCursor(1, 35);
@@ -368,8 +464,51 @@ void info_page(arguments& args, byte screen_state) {
     oled.print(F("Umidita':") );
     oled.print(args.h_set);
 
+    oled.setCursor(1, 53);
+    oled.print("Ora: ");
+    oled.print(now.Hour());
+    oled.print(":");
+    oled.print(now.Minute());
+
     drawBar(screen_state);
   } while (oled.nextPage());
+}
+void set_fan_page(fan_arguments& args, byte screen_state) {
+  oled.firstPage();
+  do {
+    switch (screen_state) {
+      case 31: // HOUR 1
+        oled.drawFrame(0, 0, 64, 11); 
+        break;
+      case 32: // MIN 1
+        oled.drawFrame(0, 13, 64, 11);
+        break;
+      case 33: // INTERVAL 1
+        oled.drawFrame(0, 26, 64, 11);
+        break;
+      case 34: // HOUR 2
+        oled.drawFrame(65, 0, 63, 11);
+        break;
+      case 35: // MIN 2
+        oled.drawFrame(65, 13, 63, 11);
+        break;
+      case 36: // INTERVAL 2
+        oled.drawFrame(65 ,26, 63, 11);
+        break;
+    }
+    oled.setFont(u8g2_font_6x10_tr);
+    switch (fan_state) {
+      case 0:
+        oled.drawStr(42, 50, "FAN OFF");
+        break;
+      case 1:
+        oled.drawStr(47, 50, "FAN ON");
+        break;
+    }
+    writeFanPage(args);
+    drawBar(screen_state);
+
+  } while ( oled.nextPage() );
 }
 void set_parameter_page(arguments& args, byte screen_state) {
   oled.firstPage();
@@ -421,6 +560,7 @@ void drawBar(byte screen_state) {
       oled.print( F("Set T/H") );
       oled.setCursor(110, 63);
       oled.print( F("Info") );
+      oled.drawStr(62, 63, "Fan");
       break;
     case 20:
     case 21:
@@ -430,7 +570,12 @@ void drawBar(byte screen_state) {
     case 25:
     case 26: 
     case 27:
-    case 28: {
+    case 28: 
+    case 31:
+    case 32:
+    case 33:
+    case 34:
+    case 35:
         oled.print(F("Home") );
         oled.setCursor(46, 63);
         oled.print( F("-") );
@@ -439,8 +584,8 @@ void drawBar(byte screen_state) {
         oled.setCursor(110, 63);
         oled.print( F("Next") );
         break;
-      }
     case 29:
+    case 36:
       oled.print(F("Home") );
       oled.setCursor(46, 63);
       oled.print( F("-") );
@@ -517,6 +662,32 @@ void writeParPage(arguments& args){
   oled.setCursor(105, 52);
   oled.print(args.dh_deu_off);
 }
+void writeFanPage(fan_arguments& args){
+  oled.setFont(u8g2_font_6x10_tr);
+  oled.setCursor(2, 9);
+  oled.print("Hour 1: "); 
+  oled.print(args.start_1_hr);
+
+  oled.setCursor(2, 22);
+  oled.print("Min 1: "); 
+  oled.print(args.start_1_min);
+
+  oled.setCursor(2, 35);
+  oled.print("dt 1: "); 
+  oled.print(args.interval_1_min);
+
+  oled.setCursor(67, 9);
+  oled.print("Hour 2: "); 
+  oled.print(args.start_2_hr);
+
+  oled.setCursor(67, 22);
+  oled.print("Min 2: "); 
+  oled.print(args.start_2_min);
+
+  oled.setCursor(67, 35);
+  oled.print("dt 2: "); 
+  oled.print(args.interval_2_min);
+}
 // TEMPERATURE control with REFRIGERATOR and LIGHT BULB
 void keep_T_const(arguments& args) {
   if ( args.t_current >= args.t_set + args.dt_cool_on && cool_state == 0) {
@@ -553,15 +724,16 @@ void keep_H_const(arguments& args) {
     //Nothing to do
   }
 }
-/*
-void ventilation(RtcDateTime now, byte hour, byte min_start, byte min_stop) {
-  if (now.Hour() == hour && (now.Minute() > min_start && now.Minute() < min_stop)) {
+void ventilation(RtcDateTime now, fan_arguments& args) {
+  if ( (now.Hour() == args.start_1_hr && (now.Minute() >= args.start_1_min && now.Minute() <= args.start_1_min + args.interval_1_min)) || 
+       (now.Hour() == args.start_2_hr && (now.Minute() >= args.start_2_min && now.Minute() <= args.start_2_min + args.interval_2_min))) {
     digitalWrite(RELAY_FAN_EXT, HIGH);
+    fan_state = 1;
   } else {
     digitalWrite(RELAY_FAN_EXT, LOW);
+    fan_state = 0;
   }
 }
-*/
 // Definition of the 4 functions for the device control: used to turn them ON or OFF.
 void umi_control(bool command) {
   if (command == ON) {
