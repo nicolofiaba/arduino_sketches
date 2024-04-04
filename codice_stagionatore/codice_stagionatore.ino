@@ -8,12 +8,12 @@
 
 #define ON true
 #define OFF false
-#define RELAY_BUTTON_UMI 3
+#define RELAY_BUTTON_UMI 8
 #define RELAY_AC_DEU 12
 #define RELAY_AC_COOL 11
 #define RELAY_AC_HEAT 10
 #define RELAY_AC_UMI 9
-#define RELAY_FAN_EXT 8
+#define RELAY_FAN_EXT 3
 #define BUTTON_1 4
 #define BUTTON_2 5
 #define BUTTON_3 6
@@ -51,6 +51,8 @@ byte fan_interval_min_1;
 byte fan_start_hour_2;
 byte fan_start_min_2;
 byte fan_interval_min_2;
+
+unsigned long fan_page_time;
 
 BME280I2C bme;
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C oled(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
@@ -113,8 +115,8 @@ void setup() {
         //    2) the battery on the device is low or even missing
         Rtc.SetDateTime(compileTime);
     }
-  Rtc.SetDateTime(compileTime);
-  RtcDateTime now = Rtc.GetDateTime();
+    // Rtc.SetDateTime(compileTime); // NB: Uncomment ONLY on first run. Then recompile and upload immediatly with this commented
+    RtcDateTime now = Rtc.GetDateTime();
 
   EEPROM.get(0, temp_set);
   EEPROM.get(1, delta_heat_ON);
@@ -260,7 +262,7 @@ void loop() {
       break;
     case 31:
       set_fan_page(fan_args, screen_state);
-      if (button_state_2 == HIGH && fan_start_hour_1 != 0) {
+      if (button_state_2 == HIGH && fan_start_hour_1 != 0 && (millis() - fan_page_time > 1000)) {  //Deboucing system to avoid unwanted changes in fan_start_hour_1
         fan_start_hour_1 -= 1;
         EEPROM.put(10, fan_start_hour_1);
       } else if (button_state_3 == HIGH) {
@@ -335,7 +337,7 @@ int state_selection(bool button_state_1, bool button_state_2, bool button_state_
     screen_state = 20;
   } else if (button_state_2 == HIGH && screen_state == 10) { // Homepage to Fan (Set hour 1)
     screen_state = 31;
-    delay(300); // Debouncing
+    fan_page_time = millis();
   } else if (button_state_4 == HIGH && screen_state == 31) { // Fan (Set min 1)
     screen_state = 32;
   } else if (button_state_4 == HIGH && screen_state == 32) { // Fan (Set interval 1)
@@ -470,12 +472,29 @@ void info_page(arguments& args, byte screen_state, RtcDateTime now) {
     oled.setCursor(1, 44);
     oled.print(F("Umidita':") );
     oled.print(args.h_set);
+    
+    oled.setCursor(84, 38);
+    oled.print(now.Day());
+    oled.print("/");
+    oled.print(now.Month());
+    oled.print("/");
+    oled.print(now.Year());
 
-    oled.setCursor(1, 53);
-    oled.print("Ora: ");
+    oled.drawFrame(75, 30, 53, 24);
+
+    oled.setFont(u8g2_font_6x10_tr);
+    oled.setCursor(78, 50);
     oled.print(now.Hour());
     oled.print(":");
+    if (now.Minute() < 10) {
+      oled.print("0");
+    }
     oled.print(now.Minute());
+    oled.print(":");
+    if (now.Second() < 10) {
+      oled.print("0");
+    }
+    oled.print(now.Second());
 
     drawBar(screen_state);
   } while (oled.nextPage());
