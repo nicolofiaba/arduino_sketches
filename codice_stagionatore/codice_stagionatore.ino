@@ -5,6 +5,8 @@
 #include <EEPROM.h>
 #include <ThreeWire.h>
 #include <RtcDS1302.h>
+// #include <SPI.h>
+// #include <SD.h>
 
 #define ON true
 #define OFF false
@@ -761,7 +763,6 @@ void ventilation(RtcDateTime now, fan_arguments& args) {
     fan_state = 0;
   }
 }
-
 // Definition of the 4 functions for the device control: used to turn them ON or OFF.
 void umi_control(bool command) {
   if (command == ON) {

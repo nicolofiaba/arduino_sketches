@@ -5,7 +5,7 @@ File myFile;
 
 void setup() {
   Serial.begin(9600);
-  if (!SD.begin(4)) {
+  if (!SD.begin(10)) {
     Serial.println("SD initialization failed!");
     while(1);
   }
@@ -13,8 +13,10 @@ void setup() {
 
   if (SD.exists("example.txt")) {
     Serial.println("example.txt already exists.");
+    while(1);
   } else {
     Serial.println("example.txt doesn't exist.");
+    delay(1000);
   }
 
   Serial.println("Creating example.txt  file..");
